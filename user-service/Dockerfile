@@ -1,15 +1,26 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm
 
-# Install ekstensi database
-RUN docker-php-ext-install pdo pdo_mysql
+# 1. Install dependensi sistem yang dibutuhkan Composer & Laravel
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
+# 2. Bersihkan cache agar image tidak bengkak
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 3. Install ekstensi PHP yang dibutuhkan Laravel
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# 4. === INI KUNCINYA: Copy Composer dari image official ===
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 5. Set folder kerja
 WORKDIR /var/www
 
-COPY . .
-
-# Menggunakan chmod 777 adalah cara tercepat untuk local development 
-# agar Laravel bisa menulis ke folder storage dan cache
-RUN chmod -R 777 storage bootstrap/cache
-
-EXPOSE 9000
-CMD ["php-fpm"]
+# (Opsional) Copy seluruh kodingan ke dalam container saat build
+# COPY . /var/www
