@@ -1,5 +1,7 @@
 services:
-  # API Gateway
+  # =========================================
+  # 1. API GATEWAY
+  # =========================================
   gateway:
     image: nginx:alpine
     container_name: eco-gateway
@@ -11,8 +13,11 @@ services:
       - eco-network
     depends_on:
       - user-service
+      - product-service
 
-  # User Service
+  # =========================================
+  # 2. USER SERVICE (MySQL)
+  # =========================================
   user-service:
     build:
       context: ./user-service
@@ -27,26 +32,53 @@ services:
     depends_on:
       - db-user
 
-  # Database User
   db-user:
     image: mysql:8.0
     container_name: eco-db-user
     environment:
       MYSQL_DATABASE: user_db
       MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - mysql_user_data:/var/lib/mysql
     networks:
       - eco-network
 
-  # Database Product
+  # =========================================
+  # 3. PRODUCT SERVICE (PostgreSQL)
+  # =========================================
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: eco-product-service
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./product-service:/var/www
+    networks:
+      - eco-network
+    depends_on:
+      - db-product
+
   db-product:
     image: postgres:15-alpine
     container_name: eco-db-product
     environment:
       POSTGRES_DB: product_db
+      POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
     networks:
       - eco-network
 
+# =========================================
+# NETWORK & VOLUMES GLOBAL
+# =========================================
 networks:
   eco-network:
     driver: bridge
+
+volumes:
+  mysql_user_data:
+  product_db_data:
