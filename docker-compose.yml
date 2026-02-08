@@ -14,17 +14,16 @@ services:
     depends_on:
       - user-service
       - product-service
+      - transaction-service
 
   # =========================================
-  # 2. USER SERVICE (MySQL)
+  # 2. USER SERVICE
   # =========================================
   user-service:
     build:
       context: ./user-service
       dockerfile: Dockerfile
     container_name: eco-user-service
-    ports:
-      - "8000:8000"
     volumes:
       - ./user-service:/var/www
     networks:
@@ -44,14 +43,13 @@ services:
       - eco-network
 
   # =========================================
-  # 3. PRODUCT SERVICE (PostgreSQL)
+  # 3. PRODUCT SERVICE
   # =========================================
   product-service:
     build:
       context: ./product-service
       dockerfile: Dockerfile
     container_name: eco-product-service
-    restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./product-service:/var/www
@@ -72,17 +70,14 @@ services:
     networks:
       - eco-network
 
-# ... product-service dan db-product ada di atas ...
-
   # =========================================
-  # 4. TRANSACTION SERVICE (MySQL)
+  # 4. TRANSACTION SERVICE
   # =========================================
   transaction-service:
     build:
       context: ./transaction-service
       dockerfile: Dockerfile
     container_name: eco-transaction-service
-    restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./transaction-service:/var/www
@@ -102,10 +97,8 @@ services:
     networks:
       - eco-network
 
-  # ... networks dan volumes ada di bawah ...
-  
 # =========================================
-# NETWORK & VOLUMES GLOBAL
+# GLOBAL
 # =========================================
 networks:
   eco-network:

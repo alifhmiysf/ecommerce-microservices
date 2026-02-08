@@ -8,41 +8,51 @@ use Illuminate\Support\Facades\Http;
 class TransactionController extends Controller
 {
     public function store(Request $request)
-    {
-        // 1. validasi input
-    $data = $request->validate([
-        'user_id' => 'required|integer',
-        'product_id' => 'required|integer',
-        'quantity' => 'required|integer|min:1',
-    ]);
+{
+    // 1. Ambil Token dari Header Request
+    $token = $request->bearerToken();
 
-    $response = Http::get("http://product-service:8000/api/products/{$request->product_id}");
-
-    if($response->failed()){
-        return response()->json (['message' => 'Produk tidak ditemukan di sistem!'],404);
+    if (!$token) {
+        return response()->json(['message' => 'Token tidak ditemukan! Anda harus login.'], 401);
     }
 
-    // ambil data produk
-    $product =$response->json();
-    $realPrice = $product['price'];
-    $total = $realPrice * $request-> quantity;
+    // 2. TANYA KE USER SERVICE: "Siapa pemilik token ini?"
+    // Kita tembak route /api/user yang diproteksi Sanctum di User Service
+    $userResponse = Http::withToken($token)
+        ->get("http://user-service:8000/api/user");
 
-    // simpan transaksi
+    if ($userResponse->failed()) {
+        return response()->json(['message' => 'Token tidak valid atau sudah expired!'], 401);
+    }
+
+    $userData = $userResponse->json();
+    $userId = $userData['id']; // ID User yang asli dari sistem auth
+
+    // 3. Validasi Produk (Kode lama kamu)
+    $productResponse = Http::get("http://product-service:8000/api/products/{$request->product_id}");
+    
+    if ($productResponse->failed()) {
+        return response()->json(['message' => 'Produk tidak ditemukan!'], 404);
+    }
+
+    $product = $productResponse->json();
+    $total = $product['price'] * $request->quantity;
+
+    // 4. Simpan Transaksi (Gunakan $userId dari hasil validasi token)
     $transaction = Transaction::create([
-        'user_id' => $request->user_id,
+        'user_id' => $userId, 
         'product_id' => $request->product_id,
-        'quantity' =>$request->quantity,
-        'total_price'=> $total,
-        'status' =>'pending'
+        'quantity' => $request->quantity,
+        'total_price' => $total,
+        'status' => 'pending'
     ]);
 
-        // kembalikan respon JSON
-        return response()->json([
-            'message' => 'Transaksi berhasil dibuat!',
-            'data' => $transaction
-        ],201);
-    }
-
+    return response()->json([
+        'message' => 'Transaksi Berhasil dengan Auth!',
+        'user' => $userData['name'],
+        'data' => $transaction
+    ], 201);
+}
     public function index()
     {
         return response()->json(Transaction::all());

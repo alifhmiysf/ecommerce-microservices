@@ -12,3 +12,6 @@ Route::get('/user', function (Request $request) {
 Route::post('/transactions', [TransactionController::class, 'store']); // Bikin Pesanan
 Route::get('/transactions', [TransactionController::class, 'index']); // Lihat Semua
 Route::get('/transactions/{id}', [TransactionController::class, 'show']); // Lihat Detail
+Route::get('/test', function() {
+    return "Service Transaksi OK";
+});
