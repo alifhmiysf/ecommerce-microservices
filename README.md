@@ -1,34 +1,46 @@
-# E-Commerce Microservices Project 🚀
-Proyek ini adalah implementasi arsitektur microservices menggunakan **Laravel**, **Docker**, dan **Nginx API Gateway**. Dibangun dalam waktu 14 hari untuk mendalami komunikasi antar service dan database isolation.
+# 🛒 E-Commerce Microservices Project
 
-## 🏗️ Tech Stack
-- **Framework:** Laravel 11
-- **Orchestration:** Docker Compose
-- **Gateway:** Nginx
-- **Database:** MySQL (User & Order), PostgreSQL (Product)
-- **Auth:** JWT (JSON Web Token)
+Proyek ini adalah implementasi arsitektur microservices modern menggunakan **Laravel 11**, **Docker**, dan **Nginx API Gateway**. Proyek ini mendemonstrasikan pemisahan database (*Database Isolation*), komunikasi antar service, dan manajemen container.
 
-## 🗺️ Roadmap Progres
+## 🏗️ Tech Stack & Architecture
+- **API Gateway:** Nginx (Port 80)
+- **Framework:** Laravel 11 (PHP 8.2)
+- **Containerization:** Docker & Docker Compose
+- **Service A (User):** Laravel + MySQL
+- **Service B (Product):** Laravel + PostgreSQL
+- **Service C (Transaction):** Laravel + MySQL + Inter-service Communication
 
-### MINGGU 1: Setup Infrastructure & User Service
-- [x] **Hari 1:** Network Architecture & Docker Master. (Setup Nginx Gateway & Multi-DB)
-- [x] **Hari 2:** User Service (Auth Center). (Setup Laravel User Service & Migration)
-- [ ] **Hari 3:** JWT Centralization.
-- [ ] **Hari 4:** Product Service Setup.
-- [ ] **Hari 5:** API Gateway Routing.
-- [ ] **Hari 6:** Service Communication (Internal Guzzle).
+## 🗺️ Roadmap & Progress
+
+### 🏗️ MINGGU 1: Infrastructure & Core Services
+- [x] **Hari 1:** Network Architecture & Docker Master. (Setup Nginx Gateway & Multi-DB).
+- [x] **Hari 2:** User Service Setup. (Setup Laravel, MySQL, & Migration).
+- [x] **Hari 3:** Product Service Setup. (Implementation with **PostgreSQL**).
+- [x] **Hari 4:** API Gateway Routing. (Nginx Configuration for Multi-service).
+- [x] **Hari 5:** Transaction Service & Synchronous Communication. (Fetch Product Price via HTTP).
+- [ ] **Hari 6:** JWT Centralization (Auth Security).
 - [ ] **Hari 7:** Review & Docker Optimization.
 
-### MINGGU 2: Order Service & Messaging Broker
-- [ ] **Hari 8:** Order Service Foundation.
-- [ ] **Hari 9:** Logic: Check Product Availability.
-- [ ] **Hari 10:** Introduction to RabbitMQ/Redis Queue.
-- [ ] **Hari 11:** Event-Driven: Update Stock.
+### 🚀 MINGGU 2: Messaging Broker & Testing
+- [ ] **Hari 8:** Introduction to RabbitMQ/Redis Queue.
+- [ ] **Hari 9:** Event-Driven: Update Stock (Asynchronous).
+- [ ] **Hari 10:** Logic: Check User Validity.
+- [ ] **Hari 11:** Error Handling & Circuit Breaker.
 - [ ] **Hari 12:** Database Isolation Test.
 - [ ] **Hari 13:** Unified Logging.
-- [ ] **Hari 14:** End-to-End Testing.
+- [ ] **Hari 14:** End-to-End Testing (Postman Collection).
+
+## 🔌 API Endpoints (Gateway)
+Semua request melalui port **80** dan diteruskan ke service terkait:
+
+| Service | Endpoint | Method | Description |
+|---------|----------|--------|-------------|
+| **User** | `/users/api/...` | ALL | Manajemen User & Auth |
+| **Product** | `/products/api/products` | GET/POST | Katalog Produk (Postgres) |
+| **Transaction** | `/transactions/api/transactions` | GET/POST | Transaksi (Auto-check Price) |
 
 ## 🚀 Cara Menjalankan
-1. Clone repository ini.
-2. Jalankan `docker compose up -d --build`.
-3. Akses API melalui port 80 (Gateway).
+1. **Clone Repository:**
+   ```bash
+   git clone <repo-url>
+   cd ecommerce-microservices
