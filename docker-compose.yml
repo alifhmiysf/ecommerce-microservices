@@ -72,6 +72,38 @@ services:
     networks:
       - eco-network
 
+# ... product-service dan db-product ada di atas ...
+
+  # =========================================
+  # 4. TRANSACTION SERVICE (MySQL)
+  # =========================================
+  transaction-service:
+    build:
+      context: ./transaction-service
+      dockerfile: Dockerfile
+    container_name: eco-transaction-service
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./transaction-service:/var/www
+    networks:
+      - eco-network
+    depends_on:
+      - db-transaction
+
+  db-transaction:
+    image: mysql:8.0
+    container_name: eco-db-transaction
+    environment:
+      MYSQL_DATABASE: transaction_db
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - mysql_transaction_data:/var/lib/mysql
+    networks:
+      - eco-network
+
+  # ... networks dan volumes ada di bawah ...
+  
 # =========================================
 # NETWORK & VOLUMES GLOBAL
 # =========================================
@@ -82,3 +114,4 @@ networks:
 volumes:
   mysql_user_data:
   product_db_data:
+  mysql_transaction_data:
