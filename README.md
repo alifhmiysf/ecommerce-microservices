@@ -1,46 +1,163 @@
 # 🛒 E-Commerce Microservices Project
 
-Proyek ini adalah implementasi arsitektur microservices modern menggunakan **Laravel 11**, **Docker**, dan **Nginx API Gateway**. Proyek ini mendemonstrasikan pemisahan database (*Database Isolation*), komunikasi antar service, dan manajemen container.
+Proyek ini adalah implementasi arsitektur **microservices sederhana** menggunakan **Laravel**, **Docker**, dan **Nginx API Gateway**.
+Setiap service memiliki **database terpisah (database isolation)** dan berkomunikasi melalui **HTTP API internal Docker network**.
 
-## 🏗️ Tech Stack & Architecture
-- **API Gateway:** Nginx (Port 80)
-- **Framework:** Laravel 11 (PHP 8.2)
-- **Containerization:** Docker & Docker Compose
-- **Service A (User):** Laravel + MySQL
-- **Service B (Product):** Laravel + PostgreSQL
-- **Service C (Transaction):** Laravel + MySQL + Inter-service Communication
+Project ini dibuat sebagai latihan memahami:
 
-## 🗺️ Roadmap & Progress
+* Docker multi-container architecture
+* API Gateway routing
+* Inter-service communication
+* Database isolation pada microservices
 
-### 🏗️ MINGGU 1: Infrastructure & Core Services
-- [x] **Hari 1:** Network Architecture & Docker Master. (Setup Nginx Gateway & Multi-DB).
-- [x] **Hari 2:** User Service Setup. (Setup Laravel, MySQL, & Migration).
-- [x] **Hari 3:** Product Service Setup. (Implementation with **PostgreSQL**).
-- [x] **Hari 4:** API Gateway Routing. (Nginx Configuration for Multi-service).
-- [x] **Hari 5:** Transaction Service & Synchronous Communication. (Fetch Product Price via HTTP).
-- [ ] **Hari 6:** JWT Centralization (Auth Security).
-- [ ] **Hari 7:** Review & Docker Optimization.
+---
 
-### 🚀 MINGGU 2: Messaging Broker & Testing
-- [ ] **Hari 8:** Introduction to RabbitMQ/Redis Queue.
-- [ ] **Hari 9:** Event-Driven: Update Stock (Asynchronous).
-- [ ] **Hari 10:** Logic: Check User Validity.
-- [ ] **Hari 11:** Error Handling & Circuit Breaker.
-- [ ] **Hari 12:** Database Isolation Test.
-- [ ] **Hari 13:** Unified Logging.
-- [ ] **Hari 14:** End-to-End Testing (Postman Collection).
+# 🏗️ Tech Stack
 
-## 🔌 API Endpoints (Gateway)
-Semua request melalui port **80** dan diteruskan ke service terkait:
+* **API Gateway:** Nginx
+* **Framework:** Laravel 12 (PHP 8.2)
+* **Containerization:** Docker & Docker Compose
 
-| Service | Endpoint | Method | Description |
-|---------|----------|--------|-------------|
-| **User** | `/users/api/...` | ALL | Manajemen User & Auth |
-| **Product** | `/products/api/products` | GET/POST | Katalog Produk (Postgres) |
-| **Transaction** | `/transactions/api/transactions` | GET/POST | Transaksi (Auto-check Price) |
+### Services
 
-## 🚀 Cara Menjalankan
-1. **Clone Repository:**
-   ```bash
-   git clone <repo-url>
-   cd ecommerce-microservices
+* **User Service:** Laravel + MySQL
+* **Product Service:** Laravel + PostgreSQL
+* **Transaction Service:** Laravel + MySQL
+
+---
+
+# 🧱 Architecture Overview
+
+```
+Client (Postman / Browser)
+        ↓
+     Nginx Gateway
+        ↓
+ ┌───────────────┬───────────────┬────────────────┐
+ │ User Service  │ Product Service │ Transaction Service │
+ │ MySQL         │ PostgreSQL      │ MySQL              │
+ └───────────────┴───────────────┴────────────────┘
+```
+
+Transaction Service melakukan komunikasi HTTP ke:
+
+* User Service → validasi token
+* Product Service → ambil data produk & kurangi stok
+
+---
+
+# 🔌 API Endpoints (via Gateway)
+
+Semua request melalui:
+
+```
+http://localhost
+```
+
+| Service     | Endpoint                         | Method | Description           |
+| ----------- | -------------------------------- | ------ | --------------------- |
+| User        | `/users/api/...`                 | ALL    | User & Authentication |
+| Product     | `/products/api/products`         | GET    | List produk           |
+| Product     | `/products/api/products`         | POST   | Tambah produk         |
+| Product     | `/products/api/products/{id}`    | GET    | Detail produk         |
+| Transaction | `/transactions/api/transactions` | POST   | Buat transaksi        |
+| Transaction | `/transactions/api/transactions` | GET    | List transaksi        |
+
+---
+
+# 🔄 Transaction Flow
+
+Alur transaksi:
+
+```
+Client
+  ↓
+Gateway
+  ↓
+Transaction Service
+  ↓
+Validasi User → User Service
+Ambil Produk → Product Service
+Kurangi Stok → Product Service
+Simpan Transaksi → Transaction DB
+```
+
+---
+
+# 🚀 Cara Menjalankan Project
+
+### 1. Clone repository
+
+```bash
+git clone <repo-url>
+cd ecommerce-microservices
+```
+
+### 2. Jalankan Docker
+
+```bash
+docker compose up -d --build
+```
+
+### 3. Cek container
+
+```bash
+docker ps
+```
+
+---
+
+# 🧪 Testing via Postman
+
+### Create Transaction
+
+```
+POST http://localhost/transactions/api/transactions
+```
+
+Header:
+
+```
+Authorization: Bearer TOKEN
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "product_id": 1,
+  "quantity": 1
+}
+```
+
+---
+
+# 📦 Database Isolation
+
+Setiap service menggunakan database terpisah:
+
+| Service     | Database   |
+| ----------- | ---------- |
+| User        | MySQL      |
+| Product     | PostgreSQL |
+| Transaction | MySQL      |
+
+Tidak ada service yang mengakses database service lain secara langsung.
+
+---
+
+# 📌 Status Project
+
+Versi saat ini:
+
+* Docker multi-service architecture ✔
+* API Gateway routing ✔
+* Inter-service communication ✔
+* Transaction → reduce stock ✔
+* Database isolation ✔
+
+---
+
+# 👨‍💻 Author
+Ali Fahmi Yusuf

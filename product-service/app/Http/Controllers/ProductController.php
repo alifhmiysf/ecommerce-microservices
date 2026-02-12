@@ -44,4 +44,14 @@ class ProductController extends Controller
 
         return response()->json($product);
     }
+
+    public function reduceStock(Request $request, $id){
+        $product =Product::findOrFail($id);
+        $quantity = $request->quantity;
+        if($product->stock < $quantity){
+            return response()->json(['message' => 'Stok tidak cukup'],400);
+        }
+        $product->decrement('stock', $quantity);
+        return response()->json(['message' => 'Stok berhasil dikurangi', 'new_stock' => $product->stock]);
+    }
 }

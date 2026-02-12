@@ -9,15 +9,13 @@ class TransactionController extends Controller
 {
     public function store(Request $request)
 {
-    // 1. Ambil Token dari Header Request
     $token = $request->bearerToken();
 
     if (!$token) {
         return response()->json(['message' => 'Token tidak ditemukan! Anda harus login.'], 401);
     }
 
-    // 2. TANYA KE USER SERVICE: "Siapa pemilik token ini?"
-    // Kita tembak route /api/user yang diproteksi Sanctum di User Service
+    // VALIDASI USER
     $userResponse = Http::withToken($token)
         ->get("http://user-service:8000/api/user");
 
@@ -26,21 +24,39 @@ class TransactionController extends Controller
     }
 
     $userData = $userResponse->json();
-    $userId = $userData['id']; // ID User yang asli dari sistem auth
+    $userId = $userData['id'];
 
-    // 3. Validasi Produk (Kode lama kamu)
+    // AMBIL PRODUK
     $productResponse = Http::get("http://product-service:8000/api/products/{$request->product_id}");
-    
+
     if ($productResponse->failed()) {
         return response()->json(['message' => 'Produk tidak ditemukan!'], 404);
     }
 
     $product = $productResponse->json();
+
+    // CEK STOK
+    if ($product['stock'] < $request->quantity) {
+        return response()->json(['message' => 'Stok tidak cukup!'], 400);
+    }
+
     $total = $product['price'] * $request->quantity;
 
-    // 4. Simpan Transaksi (Gunakan $userId dari hasil validasi token)
+    // KURANGI STOK DI PRODUCT SERVICE
+    $reduceStockResponse = Http::post(
+        "http://product-service:8000/api/products/{$request->product_id}/reduce-stock",
+        [
+            'quantity' => $request->quantity
+        ]
+    );
+
+    if ($reduceStockResponse->failed()) {
+        return response()->json(['message' => 'Gagal mengurangi stok!'], 500);
+    }
+
+    // SIMPAN TRANSAKSI
     $transaction = Transaction::create([
-        'user_id' => $userId, 
+        'user_id' => $userId,
         'product_id' => $request->product_id,
         'quantity' => $request->quantity,
         'total_price' => $total,
@@ -53,6 +69,7 @@ class TransactionController extends Controller
         'data' => $transaction
     ], 201);
 }
+
     public function index()
     {
         return response()->json(Transaction::all());

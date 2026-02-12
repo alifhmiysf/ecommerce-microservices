@@ -12,9 +12,12 @@ services:
     networks:
       - eco-network
     depends_on:
-      - user-service
-      - product-service
-      - transaction-service
+      user-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      transaction-service:
+        condition: service_started
 
   # =========================================
   # 2. USER SERVICE
@@ -24,12 +27,17 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     container_name: eco-user-service
+    working_dir: /var/www
     volumes:
       - ./user-service:/var/www
+    # --- AUTO RUN SERVER ---
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    restart: always
     networks:
       - eco-network
     depends_on:
-      - db-user
+      db-user:
+        condition: service_healthy
 
   db-user:
     image: mysql:8.0
@@ -41,6 +49,10 @@ services:
       - mysql_user_data:/var/lib/mysql
     networks:
       - eco-network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
 
   # =========================================
   # 3. PRODUCT SERVICE
@@ -53,10 +65,14 @@ services:
     working_dir: /var/www
     volumes:
       - ./product-service:/var/www
+    # --- AUTO RUN SERVER ---
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    restart: always
     networks:
       - eco-network
     depends_on:
-      - db-product
+      db-product:
+        condition: service_healthy
 
   db-product:
     image: postgres:15-alpine
@@ -69,6 +85,11 @@ services:
       - product_db_data:/var/lib/postgresql/data
     networks:
       - eco-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # =========================================
   # 4. TRANSACTION SERVICE
@@ -81,10 +102,14 @@ services:
     working_dir: /var/www
     volumes:
       - ./transaction-service:/var/www
+    # --- AUTO RUN SERVER ---
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    restart: always
     networks:
       - eco-network
     depends_on:
-      - db-transaction
+      db-transaction:
+        condition: service_healthy
 
   db-transaction:
     image: mysql:8.0
@@ -96,6 +121,10 @@ services:
       - mysql_transaction_data:/var/lib/mysql
     networks:
       - eco-network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
 
 # =========================================
 # GLOBAL
