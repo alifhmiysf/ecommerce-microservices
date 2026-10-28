@@ -4,54 +4,194 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class ProductController extends Controller
 {
-    // 1. Ambil Semua Produk
+    private function authenticatedUser(Request $request)
+    {
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return null;
+        }
+
+        $response = Http::withToken($token)
+            ->timeout(10)
+            ->get('http://127.0.0.1:8003/api/user');
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        $user = $response->json();
+
+        return !empty($user['id']) ? $user : null;
+    }
+
     public function index()
     {
-        $products = Product::all();
-        return response()->json($products);
+        return response()->json(
+            Product::where('stock', '>=', 0)->latest()->get()
+        );
     }
 
-    // 2. Tambah Produk Baru
     public function store(Request $request)
     {
-        // Validasi input
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer'
+        $user = $this->authenticatedUser($request);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Silakan login terlebih dahulu.',
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'price' => 'required|numeric|min:0.01',
+            'stock' => 'required|integer|min:0',
         ]);
 
-        // Simpan ke PostgreSQL
-        $product = Product::create($request->all());
+        $product = Product::create([
+            'seller_id' => $user['id'],
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'price' => $validated['price'],
+            'stock' => $validated['stock'],
+        ]);
 
         return response()->json([
-            'message' => 'Produk berhasil dibuat!',
-            'data' => $product
+            'message' => 'Produk berhasil dibuat.',
+            'data' => $product,
         ], 201);
     }
-    
-    // 3. Lihat Detail 1 Produk
+
     public function show($id)
     {
         $product = Product::find($id);
-        
+
         if (!$product) {
-            return response()->json(['message' => 'Produk tidak ditemukan'], 404);
+            return response()->json([
+                'message' => 'Produk tidak ditemukan.',
+            ], 404);
         }
 
         return response()->json($product);
     }
 
-    public function reduceStock(Request $request, $id){
-        $product =Product::findOrFail($id);
-        $quantity = $request->quantity;
-        if($product->stock < $quantity){
-            return response()->json(['message' => 'Stok tidak cukup'],400);
+    public function myProducts(Request $request)
+    {
+        $user = $this->authenticatedUser($request);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Token tidak valid.',
+            ], 401);
         }
-        $product->decrement('stock', $quantity);
-        return response()->json(['message' => 'Stok berhasil dikurangi', 'new_stock' => $product->stock]);
+
+        return response()->json(
+            Product::where('seller_id', $user['id'])
+                ->latest()
+                ->get()
+        );
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = $this->authenticatedUser($request);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Token tidak valid.',
+            ], 401);
+        }
+
+        $product = Product::where('id', $id)
+            ->where('seller_id', $user['id'])
+            ->first();
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan atau bukan milikmu.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string|max:5000',
+            'price' => 'sometimes|required|numeric|min:0.01',
+            'stock' => 'sometimes|required|integer|min:0',
+        ]);
+
+        $product->update($validated);
+
+        return response()->json([
+            'message' => 'Produk berhasil diperbarui.',
+            'data' => $product->fresh(),
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = $this->authenticatedUser($request);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Token tidak valid.',
+            ], 401);
+        }
+
+        $product = Product::where('id', $id)
+            ->where('seller_id', $user['id'])
+            ->first();
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan atau bukan milikmu.',
+            ], 404);
+        }
+
+        $product->delete();
+
+        return response()->json([
+            'message' => 'Produk berhasil dihapus.',
+        ]);
+    }
+
+    public function reduceStock(Request $request, $id)
+    {
+        // Endpoint internal: hanya Transaction Service yang boleh memanggil.
+        $internalKey = config('services.internal.key');
+
+        if (!$internalKey ||
+            !hash_equals($internalKey, (string) $request->header('X-Internal-Key'))) {
+            return response()->json([
+                'message' => 'Akses internal ditolak.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $quantity = $validated['quantity'];
+
+        $updated = DB::table('products')
+            ->where('id', $id)
+            ->where('stock', '>=', $quantity)
+            ->decrement('stock', $quantity);
+
+        if (!$updated) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan atau stok tidak cukup.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Stok berhasil dikurangi.',
+            'new_stock' => Product::find($id)?->stock,
+        ]);
     }
 }
