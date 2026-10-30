@@ -1,7 +1,14 @@
 import { useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 
-const categories = ["Semua", "Audio", "Elektronik", "Aksesori", "Fashion", "Produk"];
+const categories = [
+  "Semua",
+  "Audio",
+  "Elektronik",
+  "Aksesori",
+  "Fashion",
+  "Produk",
+];
 
 export default function HomePage({
   products,
@@ -9,6 +16,7 @@ export default function HomePage({
   onAdd,
   onBrowseCart,
   onRegister,
+  isLoggedIn,
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Semua");
@@ -185,23 +193,25 @@ export default function HomePage({
         )}
       </section>
 
-      <section className="newsletter">
-        <div>
-          <span className="section-kicker">MULAI SEKARANG</span>
-          <h2>Siap menemukan favoritmu?</h2>
-          <p>
-            Buat akun agar kamu dapat melihat riwayat pesananmu.
-          </p>
-        </div>
+      {!isLoggedIn && (
+        <section className="newsletter">
+          <div>
+            <span className="section-kicker">MULAI SEKARANG</span>
+            <h2>Siap menemukan favoritmu?</h2>
+            <p>
+              Buat akun agar kamu dapat melihat riwayat pesananmu.
+            </p>
+          </div>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={onRegister}
-        >
-          Buat Akun <span>→</span>
-        </button>
-      </section>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={onRegister}
+          >
+            Buat Akun <span>→</span>
+          </button>
+        </section>
+      )}
 
       <footer className="footer">
         <a href="#home" className="brand">

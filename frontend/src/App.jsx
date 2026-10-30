@@ -18,7 +18,7 @@ import { getProductMeta } from "./data/productMeta";
 
 // Key untuk menyimpan token login selama sesi browser
 const TOKEN_KEY = "simplestore_token";
-
+const CART_KEY = "simplestore_cart";
 // Batas waktu request API: 15 detik
 const API_TIMEOUT = 15000;
 
@@ -87,7 +87,39 @@ export default function App() {
   const [apiStatus, setApiStatus] = useState("loading");
 
   // Isi keranjang berdasarkan ID produk
-  const [cart, setCart] = useState({});
+  // Membaca keranjang dari localStorage ketika aplikasi dibuka
+const [cart, setCart] = useState(() => {
+  try {
+    const savedCart = localStorage.getItem(CART_KEY);
+
+    if (!savedCart) return {};
+
+    const parsedCart = JSON.parse(savedCart);
+
+    // Memastikan data yang tersimpan berbentuk objek
+    if (
+      parsedCart &&
+      typeof parsedCart === "object" &&
+      !Array.isArray(parsedCart)
+    ) {
+      return parsedCart;
+    }
+
+    return {};
+  } catch (error) {
+    console.error("Gagal membaca keranjang:", error);
+    return {};
+  }
+});
+
+// Menyimpan keranjang setiap kali isinya berubah
+useEffect(() => {
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  } catch (error) {
+    console.error("Gagal menyimpan keranjang:", error);
+  }
+}, [cart]);
 
   // Halaman aktif aplikasi
   const [page, setPage] = useState("home");

@@ -14,6 +14,17 @@ export default function AuthModal({
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [error, setError] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const passwordsMatch =
+    passwordConfirmation.length > 0 &&
+    password === passwordConfirmation;
+
+  const passwordsDoNotMatch =
+    passwordConfirmation.length > 0 &&
+    password !== passwordConfirmation;
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -38,6 +49,15 @@ export default function AuthModal({
       setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     }
   }
+
+  const isRegisterInvalid =
+    mode === "register" &&
+    (
+      !password ||
+      !passwordConfirmation ||
+      password !== passwordConfirmation ||
+      password.length < 8
+    );
 
   return (
     <div
@@ -104,40 +124,92 @@ export default function AuthModal({
           />
 
           <label htmlFor="auth-password">Password</label>
-          <input
-            id="auth-password"
-            type="password"
-            autoComplete={
-              mode === "login" ? "current-password" : "new-password"
-            }
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={8}
-            placeholder="Minimal 8 karakter"
-          />
+
+          <div className="password-input-wrapper">
+            <input
+              id="auth-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              minLength={8}
+              placeholder="Minimal 8 karakter"
+            />
+
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+              title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+            >
+              {showPassword ? "🙈" : "👁"}
+            </button>
+          </div>
 
           {mode === "register" && (
             <>
               <label htmlFor="auth-confirm-password">
                 Konfirmasi password
               </label>
-              <input
-                id="auth-confirm-password"
-                type="password"
-                autoComplete="new-password"
-                value={passwordConfirmation}
-                onChange={(event) =>
-                  setPasswordConfirmation(event.target.value)
-                }
-                required
-                minLength={8}
-                placeholder="Ulangi password"
-              />
+
+              <div className="password-input-wrapper">
+                <input
+                  id="auth-confirm-password"
+                  type={showConfirmation ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordConfirmation}
+                  onChange={(event) =>
+                    setPasswordConfirmation(event.target.value)
+                  }
+                  required
+                  minLength={8}
+                  placeholder="Ulangi password"
+                  aria-invalid={passwordsDoNotMatch}
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() =>
+                    setShowConfirmation((current) => !current)
+                  }
+                  aria-label={
+                    showConfirmation
+                      ? "Sembunyikan konfirmasi password"
+                      : "Tampilkan konfirmasi password"
+                  }
+                  title={
+                    showConfirmation
+                      ? "Sembunyikan password"
+                      : "Tampilkan password"
+                  }
+                >
+                  {showConfirmation ? "🙈" : "👁"}
+                </button>
+              </div>
+
+              {passwordsMatch && (
+                <p className="password-match success">
+                  ✓ Password cocok
+                </p>
+              )}
+
+              {passwordsDoNotMatch && (
+                <p className="password-match error">
+                  ✕ Password tidak cocok
+                </p>
+              )}
             </>
           )}
 
-          <button type="submit" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading || isRegisterInvalid}
+          >
             {loading
               ? "Memproses..."
               : mode === "login"
@@ -146,31 +218,29 @@ export default function AuthModal({
           </button>
         </form>
 
-       
-<div className="auth-switch">
-  {mode === "login" ? (
-    <>
-      <span>Belum punya akun?</span>
-      <button
-        type="button"
-        onClick={() => onSwitchMode("register")}
-      >
-        Daftar sekarang
-      </button>
-    </>
-  ) : (
-    <>
-      <span>Sudah punya akun?</span>
-      <button
-        type="button"
-        onClick={() => onSwitchMode("login")}
-      >
-        Login
-      </button>
-    </>
-  )}
-</div>
-
+        <div className="auth-switch">
+          {mode === "login" ? (
+            <>
+              <span>Belum punya akun?</span>
+              <button
+                type="button"
+                onClick={() => onSwitchMode("register")}
+              >
+                Daftar sekarang
+              </button>
+            </>
+          ) : (
+            <>
+              <span>Sudah punya akun?</span>
+              <button
+                type="button"
+                onClick={() => onSwitchMode("login")}
+              >
+                Login
+              </button>
+            </>
+          )}
+        </div>
       </section>
     </div>
   );
