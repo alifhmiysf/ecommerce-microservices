@@ -1,4 +1,4 @@
-
+import { API } from "./config/api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 
@@ -196,7 +196,7 @@ useEffect(() => {
 
   try {
     const response = await fetchWithTimeout(
-      "/products/api/products",
+      	`${API.products}/products`,
       {
         headers: {
           Accept: "application/json",
@@ -248,7 +248,7 @@ useEffect(() => {
 
     try {
       const response = await fetchWithTimeout(
-        "/transactions/api/transactions",
+        `${API.transactions}/transactions`,
         {
           headers: {
             Accept: "application/json",
@@ -290,7 +290,7 @@ useEffect(() => {
 
     try {
       const response = await fetchWithTimeout(
-        "/users/api/login",
+        `${API.users}/login`,
         {
           method: "POST",
           headers: {
@@ -335,7 +335,7 @@ useEffect(() => {
 
     try {
       const response = await fetchWithTimeout(
-        "/users/api/register",
+        `${API.users}/register`,
         {
           method: "POST",
           headers: {
@@ -509,7 +509,7 @@ useEffect(() => {
       for (const item of items) {
         try {
           const response = await fetchWithTimeout(
-            "/transactions/api/transactions",
+            `${API.transactions}/transactions`,
             {
               method: "POST",
               headers: {

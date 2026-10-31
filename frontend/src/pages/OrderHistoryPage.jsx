@@ -1,4 +1,4 @@
-
+import { API } from "../config/api";
 import { useState } from "react";
 import { formatDate, formatPrice } from "../utils/formatters";
 import { getProductMeta } from "../data/productMeta";
@@ -61,7 +61,7 @@ export default function OrderHistoryPage({
     try {
       // Endpoint ini memverifikasi bahwa transaksi milik pembeli
       const response = await fetch(
-        `/transactions/api/transactions/${transaction.id}/confirm-received`,
+        `${API.transactions}/transactions/${transaction.id}/confirm-received`,
         {
           method: "PATCH",
           headers: {

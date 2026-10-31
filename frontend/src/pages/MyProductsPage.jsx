@@ -1,8 +1,8 @@
-
+import { API } from "../config/api";
 import { useCallback, useEffect, useState } from "react";
 import { formatPrice } from "../utils/formatters";
 
-const API_PRODUCTS = "http://127.0.0.1:8001/api/products";
+const API_PRODUCTS = `${API.products}/products`;
 
 const categories = [
   { value: "audio", label: "Audio", emoji: "🎧" },

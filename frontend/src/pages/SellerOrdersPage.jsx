@@ -1,4 +1,4 @@
-
+import { API } from "../config/api";
 import { useCallback, useEffect, useState } from "react";
 import { formatPrice } from "../utils/formatters";
 
@@ -40,7 +40,7 @@ export default function SellerOrdersPage({ token, onNotice }) {
 
     try {
       const response = await fetch(
-        "/transactions/api/seller/transactions",
+        `${API.transactions}/seller/transactions`,
         {
           headers: {
             Accept: "application/json",
@@ -76,7 +76,7 @@ export default function SellerOrdersPage({ token, onNotice }) {
 
     try {
       const response = await fetch(
-        `/transactions/api/transactions/${order.id}/status`,
+        `${API.transactions}/transactions/${order.id}/status`,
         {
           method: "PATCH",
           headers: {
