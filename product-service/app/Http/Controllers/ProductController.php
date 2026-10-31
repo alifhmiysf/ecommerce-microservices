@@ -6,6 +6,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -30,10 +31,23 @@ class ProductController extends Controller
         return !empty($user['id']) ? $user : null;
     }
 
+    private function categories(): array
+    {
+        return [
+            'audio',
+            'elektronik',
+            'aksesori',
+            'fashion',
+            'lainnya',
+        ];
+    }
+
     public function index()
     {
         return response()->json(
-            Product::where('stock', '>=', 0)->latest()->get()
+            Product::where('stock', '>=', 0)
+                ->latest()
+                ->get()
         );
     }
 
@@ -49,6 +63,11 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => [
+                'required',
+                'string',
+                Rule::in($this->categories()),
+            ],
             'description' => 'nullable|string|max:5000',
             'price' => 'required|numeric|min:0.01',
             'stock' => 'required|integer|min:0',
@@ -57,6 +76,7 @@ class ProductController extends Controller
         $product = Product::create([
             'seller_id' => $user['id'],
             'name' => $validated['name'],
+            'category' => $validated['category'],
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
             'stock' => $validated['stock'],
@@ -120,6 +140,12 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
+            'category' => [
+                'sometimes',
+                'required',
+                'string',
+                Rule::in($this->categories()),
+            ],
             'description' => 'sometimes|nullable|string|max:5000',
             'price' => 'sometimes|required|numeric|min:0.01',
             'stock' => 'sometimes|required|integer|min:0',
@@ -165,8 +191,13 @@ class ProductController extends Controller
         // Endpoint internal: hanya Transaction Service yang boleh memanggil.
         $internalKey = config('services.internal.key');
 
-        if (!$internalKey ||
-            !hash_equals($internalKey, (string) $request->header('X-Internal-Key'))) {
+        if (
+            !$internalKey ||
+            !hash_equals(
+                $internalKey,
+                (string) $request->header('X-Internal-Key')
+            )
+        ) {
             return response()->json([
                 'message' => 'Akses internal ditolak.',
             ], 403);

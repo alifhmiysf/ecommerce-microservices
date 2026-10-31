@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 
 const categories = [
-  "Semua",
-  "Audio",
-  "Elektronik",
-  "Aksesori",
-  "Fashion",
-  "Produk",
+  { value: "semua", label: "Semua" },
+  { value: "audio", label: "Audio" },
+  { value: "elektronik", label: "Elektronik" },
+  { value: "aksesori", label: "Aksesori" },
+  { value: "fashion", label: "Fashion" },
+  { value: "lainnya", label: "Produk Lainnya" },
 ];
 
 export default function HomePage({
@@ -19,25 +19,23 @@ export default function HomePage({
   isLoggedIn,
 }) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Semua");
+  const [category, setCategory] = useState("semua");
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const name = String(product.name || "").toLowerCase();
-      const meta = String(product.category || "").toLowerCase();
-      const query = search.toLowerCase();
+  return products.filter((product) => {
+    const name = String(product.name || "").toLowerCase();
+    const categoryName = String(product.category || "").toLowerCase();
+    const query = search.toLowerCase();
 
-      const matchesSearch =
-        name.includes(query) || meta.includes(query);
+    const matchesSearch =
+      name.includes(query) || categoryName.includes(query);
 
-      const matchesCategory =
-        category === "Semua" ||
-        product.category === category ||
-        (category === "Produk" && !categories.includes(product.category));
+    const matchesCategory =
+      category === "semua" || categoryName === category;
 
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, search, category]);
+    return matchesSearch && matchesCategory;
+  });
+}, [products, search, category]);
 
   return (
     <>
@@ -156,17 +154,19 @@ export default function HomePage({
         </div>
 
         <div className="category-list">
-          {categories.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`category-chip ${category === item ? "selected" : ""}`}
-              onClick={() => setCategory(item)}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+  {categories.map((item) => (
+    <button
+      key={item.value}
+      type="button"
+      className={`category-chip ${
+        category === item.value ? "selected" : ""
+      }`}
+      onClick={() => setCategory(item.value)}
+    >
+      {item.label}
+    </button>
+  ))}
+</div>
 
         {apiStatus === "loading" ? (
           <div className="empty-state">

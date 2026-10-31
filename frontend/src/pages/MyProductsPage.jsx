@@ -2,12 +2,29 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatPrice } from "../utils/formatters";
 
+const API_PRODUCTS = "http://127.0.0.1:8001/api/products";
+
+const categories = [
+  { value: "audio", label: "Audio", emoji: "🎧" },
+  { value: "elektronik", label: "Elektronik", emoji: "💻" },
+  { value: "aksesori", label: "Aksesori", emoji: "⌚" },
+  { value: "fashion", label: "Fashion", emoji: "👕" },
+  { value: "lainnya", label: "Produk Lainnya", emoji: "📦" },
+];
+
 const initialForm = {
   name: "",
   description: "",
+  category: "lainnya",
   price: "",
   stock: "1",
 };
+
+function getCategoryEmoji(category) {
+  return (
+    categories.find((item) => item.value === category)?.emoji || "📦"
+  );
+}
 
 async function readResponse(response) {
   const data = await response.json().catch(() => ({}));
@@ -39,11 +56,18 @@ export default function MyProductsPage({
   const [deletingId, setDeletingId] = useState(null);
 
   const loadMyProducts = useCallback(async () => {
+    if (!token) {
+      setProducts([]);
+      setError("Silakan login terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch("/products/api/products/my", {
+      const response = await fetch(`${API_PRODUCTS}/my`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -65,6 +89,7 @@ export default function MyProductsPage({
 
   function handleChange(event) {
     const { name, value } = event.target;
+
     setForm((current) => ({
       ...current,
       [name]: value,
@@ -88,8 +113,8 @@ export default function MyProductsPage({
     try {
       const response = await fetch(
         editingId
-          ? `/products/api/products/${editingId}`
-          : "/products/api/products",
+          ? `${API_PRODUCTS}/${editingId}`
+          : API_PRODUCTS,
         {
           method: editingId ? "PUT" : "POST",
           headers: {
@@ -100,6 +125,7 @@ export default function MyProductsPage({
           body: JSON.stringify({
             name: form.name.trim(),
             description: form.description.trim() || null,
+            category: form.category,
             price: Number(form.price),
             stock: Number(form.stock),
           }),
@@ -122,12 +148,15 @@ export default function MyProductsPage({
 
   function startEdit(product) {
     setEditingId(product.id);
+
     setForm({
       name: product.name || "",
       description: product.description || "",
+      category: product.category || "lainnya",
       price: String(product.price ?? ""),
       stock: String(product.stock ?? 0),
     });
+
     setError("");
 
     document
@@ -148,7 +177,7 @@ export default function MyProductsPage({
     setError("");
 
     try {
-      const response = await fetch(`/products/api/products/${product.id}`, {
+      const response = await fetch(`${API_PRODUCTS}/${product.id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -285,6 +314,23 @@ export default function MyProductsPage({
             </div>
 
             <div className="seller-field">
+              <label htmlFor="seller-category">Kategori produk</label>
+              <select
+                id="seller-category"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                required
+              >
+                {categories.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.emoji} {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="seller-field">
               <label htmlFor="seller-description">Deskripsi produk</label>
               <textarea
                 id="seller-description"
@@ -405,15 +451,19 @@ export default function MyProductsPage({
                     key={product.id}
                   >
                     <div className="seller-product-thumbnail" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
-                        <path d="m4.5 7.7 7.5 4.4 7.5-4.4M12 12.1V21" />
-                      </svg>
+                      <span className="product-emoji">
+                        {getCategoryEmoji(product.category)}
+                      </span>
                     </div>
 
                     <div className="seller-inventory-info">
                       <h3>{product.name}</h3>
                       <strong>{formatPrice(Number(product.price))}</strong>
+                      <span className="seller-category-label">
+                        {categories.find(
+                          (item) => item.value === product.category
+                        )?.label || "Produk Lainnya"}
+                      </span>
                       <span
                         className={
                           stock > 0

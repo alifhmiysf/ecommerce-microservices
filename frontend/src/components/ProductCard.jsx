@@ -1,20 +1,52 @@
+
 import { formatPrice } from "../utils/formatters";
-import { getProductMeta } from "../data/productMeta";
+
+const CATEGORY_META = {
+  audio: {
+    label: "Audio",
+    emoji: "🎧",
+    color: "audio",
+  },
+  elektronik: {
+    label: "Elektronik",
+    emoji: "💻",
+    color: "elektronik",
+  },
+  aksesori: {
+    label: "Aksesori",
+    emoji: "⌚",
+    color: "aksesori",
+  },
+  fashion: {
+    label: "Fashion",
+    emoji: "👟",
+    color: "fashion",
+  },
+  lainnya: {
+    label: "Produk Lainnya",
+    emoji: "📦",
+    color: "lainnya",
+  },
+};
+
 export default function ProductCard({ product, onAdd }) {
-  const meta = getProductMeta(product.id);
+  const categoryKey = String(product.category || "lainnya")
+    .trim()
+    .toLowerCase();
+
+  const category =
+    CATEGORY_META[categoryKey] || CATEGORY_META.lainnya;
+
   const stock = Number(product.stock) || 0;
 
   return (
     <article className="product-card">
-      <div className={`product-visual ${meta.color}`}>
-        {meta.tag && <span className="product-tag">{meta.tag}</span>}
-
-        <span className="product-emoji">{meta.emoji}</span>
+      <div className={`product-visual ${category.color}`}>
+        <span className="product-emoji">{category.emoji}</span>
       </div>
 
       <div className="product-info">
-        <span className="product-category">{meta.category}</span>
-
+        <span className="product-category">{category.label}</span>
         <h3>{product.name}</h3>
 
         <div className="product-bottom">

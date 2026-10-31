@@ -13,15 +13,36 @@ import OrderHistoryPage from "./pages/OrderHistoryPage";
 import MyProductsPage from "./pages/MyProductsPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
 
-// Metadata tambahan untuk tampilan produk
-import { getProductMeta } from "./data/productMeta";
+
 
 // Key untuk menyimpan token login selama sesi browser
 const TOKEN_KEY = "simplestore_token";
 const CART_KEY = "simplestore_cart";
 // Batas waktu request API: 15 detik
 const API_TIMEOUT = 15000;
-
+// Kategori produk dan emoji untuk tampilan
+export const PRODUCT_CATEGORIES = {
+  audio: {
+    label: "Audio",
+    emoji: "🎧",
+  },
+  elektronik: {
+    label: "Elektronik",
+    emoji: "💻",
+  },
+  aksesori: {
+    label: "Aksesori",
+    emoji: "⌚",
+  },
+  fashion: {
+    label: "Fashion",
+    emoji: "👕",
+  },
+  lainnya: {
+    label: "Produk Lainnya",
+    emoji: "📦",
+  },
+};
 // Membaca respons JSON dan menangani respons API yang gagal
 async function readResponse(response) {
   const data = await response.json().catch(() => ({}));
@@ -171,38 +192,39 @@ useEffect(() => {
 
   // Katalog tetap dapat dilihat oleh pengunjung tanpa login
   const loadProducts = useCallback(async () => {
-    setApiStatus("loading");
+  setApiStatus("loading");
 
-    try {
-      const response = await fetchWithTimeout(
-        "/products/api/products",
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
+  try {
+    const response = await fetchWithTimeout(
+      "/products/api/products",
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
 
-      const data = await readResponse(response);
-      const list = extractList(data);
+    const data = await readResponse(response);
+    const list = extractList(data);
 
-      // Menambahkan metadata kategori untuk tampilan produk
-      setProducts(
-        list.map((product) => ({
-          ...product,
-          category: getProductMeta(product.id).category,
-        }))
-      );
+    // Kategori diambil langsung dari database Product Service
+    setProducts(
+      list.map((product) => ({
+        ...product,
+        category: PRODUCT_CATEGORIES[product.category]
+          ? product.category
+          : "lainnya",
+      }))
+    );
 
-      setApiStatus("success");
-    } catch (error) {
-      console.error("Gagal memuat produk:", error);
-      setApiStatus("error");
+    setApiStatus("success");
+  } catch (error) {
+    console.error("Gagal memuat produk:", error);
+    setApiStatus("error");
 
-      // Data sebelumnya tidak dihapus ketika request gagal
-      showNotice(`Produk gagal dimuat: ${error.message}`);
-    }
-  }, [showNotice]);
+    showNotice(`Produk gagal dimuat: ${error.message}`);
+  }
+}, [showNotice]);
 
   // Memuat katalog ketika aplikasi pertama kali dibuka
   useEffect(() => {
